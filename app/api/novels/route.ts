@@ -9,7 +9,9 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const q = searchParams.get('q')?.trim();
+    const sort = searchParams.get('sort') || 'newest';
 
+    // Fetch all matching novels
     const novels = await prisma.novel.findMany({
       where: q ? {
         OR: [
@@ -21,9 +23,22 @@ export async function GET(request: Request) {
       include: {
         reviews: { select: { rating: true } },
         tags: { select: { id: true, name: true } },
+        _count: { select: { reviews: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: sort === 'views' ? { viewCount: 'desc' }
+             : sort === 'reviews' ? { reviews: { _count: 'desc' } }
+             : { createdAt: 'desc' },
     });
+
+    // For rating sort, sort in JS after computing average
+    if (sort === 'rating') {
+      novels.sort((a, b) => {
+        const avgA = a.reviews.length ? a.reviews.reduce((s: number, r: any) => s + r.rating, 0) / a.reviews.length : 0;
+        const avgB = b.reviews.length ? b.reviews.reduce((s: number, r: any) => s + r.rating, 0) / b.reviews.length : 0;
+        return avgB - avgA;
+      });
+    }
+
     return NextResponse.json(novels);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch novels' }, { status: 500 });

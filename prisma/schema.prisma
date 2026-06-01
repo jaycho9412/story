@@ -19,18 +19,21 @@ model User {
   journalLikes     JournalLike[]
   profileComments  ProfileComment[] @relation("CommentAuthor")
   wallComments     ProfileComment[] @relation("ProfileOwner")
+  bookmarks        Bookmark[]
 }
 
 model Novel {
-  id          Int      @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   title       String
   author      String?
   coverUrl    String?
   description String?
   booksUrl    String?
-  createdAt   DateTime @default(now())
+  viewCount   Int        @default(0)
+  createdAt   DateTime   @default(now())
   reviews     Review[]
   tags        Tag[]
+  bookmarks   Bookmark[]
 }
 
 model Review {
@@ -92,4 +95,13 @@ model ProfileComment {
   author        User     @relation("CommentAuthor", fields: [authorId], references: [id])
   authorId      Int
   createdAt     DateTime @default(now())
+}
+model Bookmark {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  novel     Novel    @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  novelId   Int
+  createdAt DateTime @default(now())
+  @@unique([userId, novelId])
 }

@@ -6,8 +6,11 @@ import Link from 'next/link';
 
 export default function NovelDetail() {
   const { id } = useParams();
+  const router = useRouter();
   const [novel, setNovel] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
   
   const [rating, setRating] = useState(5);
   const [content, setContent] = useState('');
@@ -15,7 +18,16 @@ export default function NovelDetail() {
 
   useEffect(() => {
     fetch(`/api/novels/${id}`).then(res => res.json()).then(setNovel);
-    fetch('/api/auth/me').then(res => res.json()).then(data => setUser(data.user));
+    // 瀏覽次數 +1
+    fetch(`/api/novels/${id}/view`, { method: 'POST' });
+    fetch('/api/auth/me').then(res => res.json()).then(data => {
+      setUser(data.user);
+      if (data.user) {
+        fetch('/api/bookmarks').then(r => r.json()).then(bms => {
+          if (Array.isArray(bms)) setIsBookmarked(bms.some((b: any) => b.novelId === parseInt(id as string)));
+        });
+      }
+    });
   }, [id]);
 
   const submitReview = async (e: React.FormEvent) => {
@@ -36,6 +48,23 @@ export default function NovelDetail() {
     }
   };
 
+  const toggleBookmark = async () => {
+    if (!user) return router.push('/login');
+    setBookmarkLoading(true);
+    if (isBookmarked) {
+      await fetch(`/api/bookmarks/${id}`, { method: 'DELETE' });
+      setIsBookmarked(false);
+    } else {
+      await fetch('/api/bookmarks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ novelId: parseInt(id as string) }),
+      });
+      setIsBookmarked(true);
+    }
+    setBookmarkLoading(false);
+  };
+
   if (!novel) return <div className="container" style={{ textAlign: 'center', marginTop: '10vh' }}>Loading...</div>;
 
   const ratingAvg = novel.reviews?.length 
@@ -52,20 +81,30 @@ export default function NovelDetail() {
           <div style={{ flex: '2 1 400px', padding: '3rem' }}>
             <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{novel.title}</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', marginBottom: '1.5rem' }}>作者：{novel.author}</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.8rem' }}>
               <span className="stars" style={{ fontSize: '1.5rem' }}>★ {ratingAvg}</span>
               <span style={{ color: 'var(--text-secondary)' }}>({novel.reviews?.length || 0} 則評論)</span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>👁 {novel.viewCount ?? 0} 次瀏覽</span>
             </div>
             
-            <p style={{ marginBottom: '3rem', lineHeight: '1.8', opacity: 0.9 }}>
+            <p style={{ marginBottom: '2rem', lineHeight: '1.8', opacity: 0.9 }}>
               {novel.description}
             </p>
 
-            {novel.booksUrl && (
-              <a href={novel.booksUrl} target="_blank" rel="noopener noreferrer" className="btn btn-books" style={{ fontSize: '1.2rem', padding: '1rem 2rem' }}>
-                🛒 前往博客來購買
-              </a>
-            )}
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              {novel.booksUrl && (
+                <a href={novel.booksUrl} target="_blank" rel="noopener noreferrer" className="btn btn-books" style={{ fontSize: '1.1rem', padding: '0.8rem 1.8rem' }}>
+                  🛒 前往博客來購買
+                </a>
+              )}
+              <button
+                onClick={toggleBookmark}
+                disabled={bookmarkLoading}
+                style={{ background: isBookmarked ? 'rgba(139,92,246,0.25)' : 'rgba(255,255,255,0.08)', border: `1px solid ${isBookmarked ? 'var(--primary)' : 'var(--glass-border)'}`, color: isBookmarked ? '#c4b5fd' : 'white', padding: '0.8rem 1.8rem', borderRadius: '12px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 600, transition: 'all 0.2s' }}
+              >
+                {isBookmarked ? '🔖 已收藏' : '📌 加入收藏'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
