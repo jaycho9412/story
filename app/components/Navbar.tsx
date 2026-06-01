@@ -31,11 +31,13 @@ export default function Navbar() {
         </Link>
       </h2>
       <div className="nav-links">
-        <Link href="/">首頁</Link>
+        <Link href="/journal">📝 心得廣場</Link>
+        <Link href="/search" style={{ color: 'var(--text-secondary)' }}>🔍 搜尋用戶</Link>
         {user ? (
           <>
             <Link href="/wishlist" style={{ color: 'var(--star)' }}>⭐ 願望清單</Link>
-            <Link href="/profile" style={{ color: '#86efac' }}>📝 心得廣場</Link>
+            <Link href="/journal" style={{ color: '#86efac' }}>📝 心得廣場</Link>
+            <Link href="/profile" style={{ color: 'var(--primary)' }}>👤 我的版面</Link>
             {user.role === 'admin' && (
               <Link href="/admin" style={{ color: 'var(--accent)' }}>⚙️ 後台管理</Link>
             )}

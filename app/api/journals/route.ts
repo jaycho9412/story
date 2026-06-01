@@ -9,7 +9,10 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
 export async function GET() {
   try {
     const journals = await prisma.journal.findMany({
-      include: { user: { select: { username: true, id: true } } },
+      include: {
+        user: { select: { id: true, username: true } },
+        likes: { select: { userId: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
     return NextResponse.json(journals);

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function NovelDetail() {
   const { id } = useParams();
@@ -80,7 +81,9 @@ export default function NovelDetail() {
               {novel.reviews?.map((r: any) => (
                 <div key={r.id} style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <strong>{r.user.username}</strong>
+                    <Link href={`/user/${r.user.id}`} style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
+                      👤 {r.user.username}
+                    </Link>
                     <span className="stars">★ {r.rating}</span>
                   </div>
                   <p style={{ color: 'rgba(255,255,255,0.8)' }}>{r.content}</p>

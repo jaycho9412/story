@@ -13,7 +13,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       include: {
         reviews: {
           include: {
-            user: { select: { username: true } }
+            user: { select: { id: true, username: true } }
           },
           orderBy: { createdAt: 'desc' }
         }
