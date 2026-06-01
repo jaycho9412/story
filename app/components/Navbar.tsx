@@ -35,6 +35,7 @@ export default function Navbar() {
         {user ? (
           <>
             <Link href="/wishlist" style={{ color: 'var(--star)' }}>⭐ 願望清單</Link>
+            <Link href="/profile" style={{ color: '#86efac' }}>📝 心得廣場</Link>
             {user.role === 'admin' && (
               <Link href="/admin" style={{ color: 'var(--accent)' }}>⚙️ 後台管理</Link>
             )}

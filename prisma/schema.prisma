@@ -15,6 +15,7 @@ model User {
   createdAt    DateTime   @default(now())
   reviews      Review[]
   wishlists    Wishlist[]
+  journals     Journal[]
 }
 
 model Novel {
@@ -26,6 +27,7 @@ model Novel {
   booksUrl    String?
   createdAt   DateTime @default(now())
   reviews     Review[]
+  tags        Tag[]
 }
 
 model Review {
@@ -33,10 +35,8 @@ model Review {
   rating    Int
   content   String?
   createdAt DateTime @default(now())
-  
   user      User     @relation(fields: [userId], references: [id])
   userId    Int
-  
   novel     Novel    @relation(fields: [novelId], references: [id])
   novelId   Int
 }
@@ -48,8 +48,24 @@ model Wishlist {
   coverUrl    String?
   description String?
   booksUrl    String?
-  status      String   @default("pending") // "pending" | "done"
+  status      String   @default("pending")
   createdAt   DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id])
   userId      Int
+}
+
+model Tag {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  novels Novel[]
+}
+
+model Journal {
+  id        Int      @id @default(autoincrement())
+  title     String?
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
 }

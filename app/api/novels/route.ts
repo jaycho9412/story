@@ -5,15 +5,24 @@ import { cookies } from 'next/headers';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const q = searchParams.get('q')?.trim();
+
     const novels = await prisma.novel.findMany({
+      where: q ? {
+        OR: [
+          { title: { contains: q, mode: 'insensitive' } },
+          { author: { contains: q, mode: 'insensitive' } },
+          { tags: { some: { name: { contains: q, mode: 'insensitive' } } } },
+        ],
+      } : undefined,
       include: {
-        reviews: {
-          select: { rating: true }
-        }
+        reviews: { select: { rating: true } },
+        tags: { select: { id: true, name: true } },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
     return NextResponse.json(novels);
   } catch (error) {
