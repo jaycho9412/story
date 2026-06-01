@@ -28,6 +28,36 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth_token')?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const decoded = jwt.verify(token, JWT_SECRET) as { role: string };
+    if (decoded.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+    const { id } = await params;
+    const { title, author, coverUrl, description, booksUrl } = await request.json();
+    if (!title?.trim()) return NextResponse.json({ error: '書名為必填' }, { status: 400 });
+
+    const novel = await prisma.novel.update({
+      where: { id: parseInt(id) },
+      data: {
+        title: title.trim(),
+        author: author?.trim() || '未知作者',
+        coverUrl: coverUrl?.trim() || '',
+        description: description?.trim() || '',
+        booksUrl: booksUrl?.trim() || '',
+      },
+    });
+
+    return NextResponse.json(novel);
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to update novel' }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const cookieStore = await cookies();
