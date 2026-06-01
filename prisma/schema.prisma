@@ -8,12 +8,13 @@ datasource db {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  username     String   @unique
+  id           Int        @id @default(autoincrement())
+  username     String     @unique
   passwordHash String
-  role         String   @default("user") // "user" or "admin"
-  createdAt    DateTime @default(now())
+  role         String     @default("user")
+  createdAt    DateTime   @default(now())
   reviews      Review[]
+  wishlists    Wishlist[]
 }
 
 model Novel {
@@ -38,4 +39,17 @@ model Review {
   
   novel     Novel    @relation(fields: [novelId], references: [id])
   novelId   Int
+}
+
+model Wishlist {
+  id          Int      @id @default(autoincrement())
+  title       String
+  author      String?
+  coverUrl    String?
+  description String?
+  booksUrl    String?
+  status      String   @default("pending") // "pending" | "done"
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
 }

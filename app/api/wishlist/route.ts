@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
-import { prisma } from '@/lib/prisma';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
 
@@ -14,46 +14,34 @@ export async function GET() {
     const decoded = jwt.verify(token, JWT_SECRET) as { role: string };
     if (decoded.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-    const reviews = await prisma.review.findMany({
-      include: {
-        user: { select: { username: true } },
-        novel: { select: { title: true } },
-      },
+    const wishlists = await prisma.wishlist.findMany({
+      include: { user: { select: { username: true } } },
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(reviews);
+    return NextResponse.json(wishlists);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch wishlists' }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
-
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('auth_token')?.value;
-
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
 
-    const { novelId, rating, content } = await request.json();
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+    const { title, author, coverUrl, description, booksUrl } = await request.json();
 
-    if (!novelId || !rating) {
-      return NextResponse.json({ error: 'novelId and rating are required' }, { status: 400 });
-    }
+    if (!title) return NextResponse.json({ error: '書名為必填' }, { status: 400 });
 
-    const review = await prisma.review.create({
-      data: {
-        novelId: parseInt(novelId),
-        userId: decoded.userId,
-        rating: parseInt(rating),
-        content
-      }
+    const wishlist = await prisma.wishlist.create({
+      data: { title, author, coverUrl, description, booksUrl, userId: decoded.userId },
     });
 
-    return NextResponse.json(review);
+    return NextResponse.json(wishlist, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to create review' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create wishlist' }, { status: 500 });
   }
 }

@@ -34,15 +34,16 @@ export default function Navbar() {
         <Link href="/">首頁</Link>
         {user ? (
           <>
-            <span style={{ marginLeft: '1.5rem', color: 'var(--star)' }}>
-              您好, {user.username} {user.role === 'admin' ? '(管理員)' : ''}
-            </span>
+            <Link href="/wishlist" style={{ color: 'var(--star)' }}>⭐ 願望清單</Link>
             {user.role === 'admin' && (
-              <Link href="/admin/add" style={{ color: 'var(--accent)' }}>+ 新增書籍</Link>
+              <Link href="/admin" style={{ color: 'var(--accent)' }}>⚙️ 後台管理</Link>
             )}
-            <button 
-              onClick={handleLogout} 
-              style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', marginLeft: '1.5rem', fontSize: '1rem' }}
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+              {user.username} {user.role === 'admin' ? '(管理員)' : ''}
+            </span>
+            <button
+              onClick={handleLogout}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem' }}
             >
               登出
             </button>
