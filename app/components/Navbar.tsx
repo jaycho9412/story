@@ -31,7 +31,6 @@ export default function Navbar() {
         </Link>
       </h2>
       <div className="nav-links">
-        <Link href="/journal">📝 心得廣場</Link>
         <Link href="/search" style={{ color: 'var(--text-secondary)' }}>🔍 搜尋用戶</Link>
         {user ? (
           <>
