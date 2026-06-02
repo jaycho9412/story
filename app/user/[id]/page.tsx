@@ -13,6 +13,9 @@ export default function UserProfilePage() {
   const [commentInput, setCommentInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({ title: '', content: '' });
+  const [editSaving, setEditSaving] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.json()).then(d => { if (d.user) setMe(d.user); });
@@ -63,6 +66,25 @@ export default function UserProfilePage() {
     loadProfile();
   };
 
+  const openEdit = (j: any) => {
+    setEditingId(j.id);
+    setEditForm({ title: j.title || '', content: j.content || '' });
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editForm.content.trim()) return;
+    setEditSaving(true);
+    await fetch(`/api/journals/${editingId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editForm),
+    });
+    setEditingId(null);
+    setEditSaving(false);
+    loadProfile();
+  };
+
   const formatDate = (d: string) => new Date(d).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' });
 
   if (loading) return <div className="container" style={{ textAlign: 'center', paddingTop: '4rem' }}>載入中...</div>;
@@ -88,11 +110,7 @@ export default function UserProfilePage() {
             <span>💬 <strong>{profile._count.reviews}</strong> 則書評</span>
           </div>
         </div>
-        {isMe && (
-          <button onClick={() => router.push('/profile/edit')} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer' }}>
-            ✏️ 管理心得
-          </button>
-        )}
+
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '2rem', alignItems: 'start' }}>
@@ -110,22 +128,46 @@ export default function UserProfilePage() {
                 const liked = me ? j.likes?.some((l: any) => l.userId === me.id) : false;
                 return (
                   <div key={j.id} className="glass" style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.8rem' }}>
-                      <div>
-                        {j.title && <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.2rem' }}>{j.title}</div>}
-                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{formatDate(j.createdAt)}</div>
-                      </div>
-                      {(isMe || me?.role === 'admin') && (
-                        <button onClick={() => deleteJournal(j.id)} style={{ background: '#ef4444', border: 'none', color: 'white', padding: '0.3rem 0.7rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>🗑</button>
-                      )}
-                    </div>
-                    <p style={{ lineHeight: 1.7, whiteSpace: 'pre-wrap', marginBottom: '1rem' }}>{j.content}</p>
-                    <button
-                      onClick={() => handleLike(j.id)}
-                      style={{ background: liked ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${liked ? '#f87171' : 'var(--glass-border)'}`, color: liked ? '#f87171' : 'var(--text-secondary)', padding: '0.35rem 0.9rem', borderRadius: '20px', cursor: 'pointer', fontSize: '0.9rem', transition: 'all 0.2s' }}
-                    >
-                      {liked ? '❤️' : '🤍'} {likeCount}
-                    </button>
+                    {editingId === j.id ? (
+                      /* 內嵌編輯模式 */
+                      <form onSubmit={handleEdit}>
+                        <div style={{ marginBottom: '0.8rem' }}>
+                          <input className="input-field" value={editForm.title} onChange={e => setEditForm({ ...editForm, title: e.target.value })} placeholder="標題（選填）" />
+                        </div>
+                        <div style={{ marginBottom: '0.8rem' }}>
+                          <textarea className="input-field" rows={5} value={editForm.content} onChange={e => setEditForm({ ...editForm, content: e.target.value })} placeholder="內容..." required />
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.6rem' }}>
+                          <button type="submit" className="btn btn-primary" disabled={editSaving} style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}>{editSaving ? '儲存中...' : '💾 儲存'}</button>
+                          <button type="button" onClick={() => setEditingId(null)} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.9rem' }}>取消</button>
+                        </div>
+                      </form>
+                    ) : (
+                      /* 檢視模式 */
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.8rem' }}>
+                          <div>
+                            {j.title && <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.2rem' }}>{j.title}</div>}
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{formatDate(j.createdAt)}</div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.4rem' }}>
+                            {isMe && (
+                              <button onClick={() => openEdit(j)} style={{ background: 'rgba(59,130,246,0.2)', border: '1px solid rgba(59,130,246,0.5)', color: '#93c5fd', padding: '0.3rem 0.7rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>✏️ 修改</button>
+                            )}
+                            {(isMe || me?.role === 'admin') && (
+                              <button onClick={() => deleteJournal(j.id)} style={{ background: '#ef4444', border: 'none', color: 'white', padding: '0.3rem 0.7rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>🗑</button>
+                            )}
+                          </div>
+                        </div>
+                        <p style={{ lineHeight: 1.7, whiteSpace: 'pre-wrap', marginBottom: '1rem' }}>{j.content}</p>
+                        <button
+                          onClick={() => handleLike(j.id)}
+                          style={{ background: liked ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${liked ? '#f87171' : 'var(--glass-border)'}`, color: liked ? '#f87171' : 'var(--text-secondary)', padding: '0.35rem 0.9rem', borderRadius: '20px', cursor: 'pointer', fontSize: '0.9rem', transition: 'all 0.2s' }}
+                        >
+                          {liked ? '❤️' : '🤍'} {likeCount}
+                        </button>
+                      </>
+                    )}
                   </div>
                 );
               })}
